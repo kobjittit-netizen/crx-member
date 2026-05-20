@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบเช็ครายชื่อสมาชิก CRX</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif, 'Helvetica Neue', Arial, sans-serif;
+        }
+        body {
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 25px;
+            font-size: 28px;
+        }
+        .search-box {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        .search-box input {
+            width: 100%;
+            padding: 14px 20px;
+            font-size: 16px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.3s;
+        }
+        .search-box input:focus {
+            border-color: #3498db;
+        }
+        .stats {
+            margin-bottom: 15px;
+            font-weight: bold;
+            color: #7f8c8d;
+            font-size: 15px;
+        }
+        .table-responsive {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+            font-weight: 600;
+        }
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+        
+        /* ไฮไลท์ตำแหน่งพิเศษ */
+        .rank-president { background-color: #e8f4fd !important; font-weight: bold; }
+        .rank-vice { background-color: #eafaf1 !important; font-weight: bold; }
+        .rank-secretary { background-color: #fef9e7 !important; font-weight: bold; }
+        
+        .no-result {
+            text-align: center;
+            padding: 30px;
+            color: #e74c3c;
+            display: none;
+            font-size: 18px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>📋 ระบบเช็ครายชื่อสมาชิก CRX</h1>
+    
+    <div class="search-box">
+        <input type="text" id="searchInput" onkeyup="filterMembers()" placeholder="🔍 พิมพ์เพื่อค้นหาด้วย ชื่อเล่น หรือ Username ทันที...">
+    </div>
+
+    <div class="stats" id="memberCount">กำลังโหลดข้อมูลสมาชิก...</div>
+
+    <div class="table-responsive">
+        <table id="memberTable">
+            <thead>
+                <tr>
+                    <th style="width: 15%; text-align: center;">ลำดับ</th>
+                    <th style="width: 42%;">Username</th>
+                    <th style="width: 43%;">ชื่อเล่น</th>
+                </tr>
+            </thead>
+            <tbody id="tableBody">
+                </tbody>
+        </table>
+        <div id="noResult" class="no-result">❌ ไม่พบรายชื่อสมาชิกที่คุณค้นหา</div>
+    </div>
+</div>
+
+<script>
+    // ข้อมูลสมาชิกทั้งหมดจากไฟล์ CRX.docx
+    const members = [
+        { id: 1, username: "IMKR_BL", nickname: "เค้ก [ นายก ]", class: "rank-president" },
+        { id: 2, username: "Oongzaja4", nickname: "อ๋อง [ รองนายก ]", class: "rank-vice" },
+        { id: 3, username: "Queenic_llX", nickname: "จิ๊ด/ชมพู่ [ เลขา ]", class: "rank-secretary" },
+        { id: 4, username: "A_minxo09", nickname: "มิ้น", class: "" },
+        { id: 5, username: "Icepann", nickname: "แพน", class: "" },
+        { id: 6, username: "Ballza070332545", nickname: "บอล", class: "" },
+        { id: 7, username: "Tonxyz07", nickname: "ต้น", class: "" },
+        { id: 8, username: "FreshyGxng", nickname: "เฟรชชี่", class: "" },
+        { id: 9, username: "Sword0123456", nickname: "เบน", class: "" },
+        { id: 10, username: "amnotmayaaa", nickname: "มายา", class: "" },
+        { id: 11, username: "Yesuor21", nickname: "ซิม", class: "" },
+        { id: 12, username: "dobiV3", nickname: "เปรม", class: "" },
+        { id: 13, username: "trutonqqq", nickname: "ตั้น", class: "" },
+        { id: 14, username: "SaitamaPP", nickname: "บาส", class: "" },
+        { id: 15, username: "zakor", nickname: "กุน", class: "" },
+        { id: 16, username: "Ryker", nickname: "เอิร์ธ", class: "" },
+        { id: 17, username: "AzuraA_AQ5VT", nickname: "กาย", class: "" },
+        { id: 18, username: "Moonnasaw", nickname: "ฟิวเจอร์", class: "" },
+        { id: 19, username: "evihero_devil", nickname: "อลัน", class: "" },
+        { id: 20, username: "piper420dpi", nickname: "ไปเปอร์", class: "" },
+        { id: 21, username: "teedtvcom90", nickname: "สไปร", class: "" },
+        { id: 22, username: "IDS7442981", nickname: "ภูมิ", class: "" },
+        { id: 23, username: "Underground5772", nickname: "อนันดา", class: "" },
+        { id: 24, username: "Zzz_3309", nickname: "เบส", class: "" },
+        { id: 25, username: "MNOVX123", nickname: "ต้า", class: "" },
+        { id: 26, username: "KeviniaGP", nickname: "สกาย", class: "" },
+        { id: 27, username: "RMKF_123", nickname: "ฟาน", class: "" },
+        { id: 28, username: "Arm12021arm", nickname: "อาม", class: "" },
+        { id: 29, username: "Puppyluzycia", nickname: "แพร", class: "" },
+        { id: 30, username: "XX_MysticStalthSror", nickname: "ไกด์", class: "" },
+        { id: 31, username: "exchXD33021", nickname: "สิง", class: "" },
+        { id: 32, username: "havelambo4875", nickname: "พี", class: "" },
+        { id: 33, username: "Werrrg540", nickname: "นัท", class: "" },
+        { id: 34, username: "icepannnn", nickname: "แพน", class: "" },
+        { id: 35, username: "tuvwztbv", nickname: "ฟร้อง", class: "" },
+        { id: 36, username: "Nongjust", nickname: "พิม", class: "" },
+        { id: 37, username: "Bankma", nickname: "แบงค์", class: "" },
+        { id: 38, username: "-", nickname: "มีน", class: "" },
+        { id: 39, username: "-", nickname: "แมนยู", class: "" },
+        { id: 40, username: "-", nickname: "เปรม", class: "" },
+        { id: 41, username: "-", nickname: "น้องกุน 1", class: "" },
+        { id: 42, username: "-", nickname: "น้องกุน 2", class: "" },
+        { id: 43, username: "-", nickname: "น้องกุน 3", class: "" },
+        { id: 44, username: "-", nickname: "ธี", class: "" },
+        { id: 45, username: "-", nickname: "ปอน", class: "" },
+        { id: 46, username: "Thanatch_42", nickname: "-", class: "" },
+        { id: 47, username: "-", nickname: "น้องตาต้า", class: "" }
+    ];
+
+    // โหลดข้อมูลใส่ในตารางเมื่อเปิดเว็บ
+    function initTable() {
+        const tableBody = document.getElementById('tableBody');
+        tableBody.innerHTML = '';
+
+        members.forEach(m => {
+            let row = `<tr class="${m.class}">
+                <td style="text-align: center;">${m.id}</td>
+                <td>${m.username}</td>
+                <td>${m.nickname}</td>
+            </tr>`;
+            tableBody.innerHTML += row;
+        });
+        
+        updateTotalCount(members.length);
+    }
+
+    // อัปเดตตัวเลขจำนวนคนที่แสดงอยู่
+    function updateTotalCount(count) {
+        document.getElementById('memberCount').innerText = `พบสมาชิกทั้งหมด ${count} คน`;
+    }
+
+    // ฟังก์ชันค้นหารายชื่อแบบ Real-time
+    function filterMembers() {
+        const input = document.getElementById('searchInput');
+        const filter = input.value.toLowerCase().trim();
+        const table = document.getElementById('memberTable');
+        const tr = table.getElementsByTagName('tr');
+        let count = 0;
+
+        for (let i = 1; i < tr.length; i++) {
+            let tdUser = tr[i].getElementsByTagName('td')[1];
+            let tdNick = tr[i].getElementsByTagName('td')[2];
+            
+            if (tdUser || tdNick) {
+                let userText = tdUser.textContent || tdUser.innerText;
+                let nickText = tdNick.textContent || tdNick.innerText;
+                
+                if (userText.toLowerCase().includes(filter) || nickText.toLowerCase().includes(filter)) {
+                    tr[i].style.display = "";
+                    count++;
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }
+        }
+
+        updateTotalCount(count);
+        
+        // แสดงข้อความเมื่อค้นหาไม่เจอใครเลย
+        const noResult = document.getElementById('noResult');
+        noResult.style.display = (count === 0) ? "block" : "none";
+    }
+
+    // เรียกใช้งานฟังก์ชันเมื่อหน้าเว็บโหลดเสร็จ
+    window.onload = initTable;
+</script>
+
+</body>
+</html>
